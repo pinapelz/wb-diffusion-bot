@@ -13,20 +13,24 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class StableDiffusionAPI {
     private String baseUrl;
     private String negativePrompt;
     private int stepCount;
+    private OkHttpClient client;
 
     public StableDiffusionAPI(String baseUrl) {
         this.baseUrl = baseUrl;
         this.stepCount = 20;
+        OkHttpClient.Builder clientBuilder =
+                new OkHttpClient.Builder().readTimeout(600, TimeUnit.SECONDS).writeTimeout(600, TimeUnit.SECONDS);
+        this.client = clientBuilder.build();
         negativePrompt = setDefaultNegatives();
 
     }
-    public void generateImage(String prompt) throws IOException {
-        OkHttpClient client = new OkHttpClient();
+    public String generateImage(String prompt) throws IOException {
         Map<String, Object> payload = Map.of(
                 "prompt", prompt,
                 "negative_prompt", negativePrompt,
@@ -50,6 +54,7 @@ public class StableDiffusionAPI {
                     new TypeReference<>() {});
             ImageIO.write(image, "png", new File("output.png"));
         }
+        return "Return the path to the image";
     }
 
     private static String setDefaultNegatives(){
@@ -74,7 +79,7 @@ public class StableDiffusionAPI {
         Response response = client.newCall(request).execute();
         JsonNode responseNode = new ObjectMapper().readTree(response.body().string());
         List<String> models = new ArrayList<>();
-        responseNode.forEach(model -> models.add(String.valueOf(model.get("title"))));
+        responseNode.forEach(model -> models.add(model.get("title")+","+model.get("model_name")));
         return models;
     }
 }

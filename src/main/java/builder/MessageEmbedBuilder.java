@@ -13,7 +13,10 @@ public class MessageEmbedBuilder {
                 .setDescription("Models that are currently available for use in Stable Diffusion")
                 .setTimestamp(OffsetDateTime.now());
         for (String model : models){
-            embedBuilder.addField(model, " ", false);
+            String[] modelStrParts = model.split(",");
+            String modelTitle = modelStrParts[0].replaceAll("\"","");
+            String modelName = modelStrParts[1].replaceAll("\"","");
+            embedBuilder.addField(modelName, modelTitle, false);
         }
         return embedBuilder.build();
     }
