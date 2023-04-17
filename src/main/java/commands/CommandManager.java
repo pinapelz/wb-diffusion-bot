@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import openai.OpenAIAPI;
 import stablediff.StableDiffusionAPI;
 
 
@@ -14,13 +15,15 @@ import java.io.IOException;
 
 public class CommandManager extends ListenerAdapter {
     private StableDiffusionAPI stableDiff;
+    private OpenAIAPI gpt;
     private MessageEmbedBuilder msgEmbedBuilder;
     private final String ACKNOWLEDGED_REACTION = "\u2705";
     private long adminRole;
 
-    public CommandManager(String stableDiffusionAPIURL, long adminRole) {
+    public CommandManager(String stableDiffusionAPIURL, String openaiAPIURL, String openaiAPIKEY, long adminRole) {
         super();
         stableDiff = new StableDiffusionAPI(stableDiffusionAPIURL).setStepCount(20);
+        gpt = new OpenAIAPI(openaiAPIKEY, openaiAPIURL);
         msgEmbedBuilder = new MessageEmbedBuilder();
         this.adminRole = adminRole;
     }
@@ -90,9 +93,19 @@ public class CommandManager extends ListenerAdapter {
         Message message = e.getMessage();
         String msg = message.getContentDisplay();
         String cmd = msg.split(" ")[0];
+        // Chatting query
+        if (msg.startsWith("@") && e.getMessage().getMentionedMembers().contains(e.getGuild().getSelfMember())){
+            gpt.setPrompt(msg.substring(5));
+            sendMessage(e, runFunction(() -> gpt.queryGPT()));
+            return;
+        }
         if ((!msg.startsWith("!")) || !e.getMember().isOwner()) return;
         logCommand("Received reg command: " + cmd + " from " + e.getAuthor().getAsTag());
         switch (cmd.substring(1)){
+            case "gpt":
+                gpt.setPrompt(msg.substring(5));
+                sendMessage(e, runFunction(() -> gpt.queryGPT()));
+                break;
             case "setheight":
                 int height = Integer.parseInt(msg.split(" ")[1]);
                 runFunction(() -> stableDiff.setHeight(height));

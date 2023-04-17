@@ -18,9 +18,12 @@ public class Main extends ListenerAdapter{
     private long adminRoleId;
 
     public void initializeBot(){
+        String openAIAPIURL = fileDataProcessor.getField("OpenAIAPIURL");
+        String openAIAPIKEY = fileDataProcessor.getField("OpenAIAPIKEY");
+        String stableDiffusionAPIURL = fileDataProcessor.getField("StableDiffusionAPIURL");
         fileDataProcessor = new FileDataProcessor();
         adminRoleId = Long.parseLong(fileDataProcessor.getField("adminRole"));
-        commandManager = new CommandManager(fileDataProcessor.getField("StableDiffusionAPIURL"), adminRoleId);
+        commandManager = new CommandManager(stableDiffusionAPIURL, openAIAPIURL, openAIAPIKEY ,adminRoleId);
         jdaBuilder = JDABuilder.createDefault(fileDataProcessor.getField("discordToken"));
         jdaBuilder.addEventListeners(commandManager);
         jdaBuilder.addEventListeners(this);
