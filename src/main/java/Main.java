@@ -20,7 +20,7 @@ public class Main extends ListenerAdapter{
     public void initializeBot(){
         fileDataProcessor = new FileDataProcessor();
         adminRoleId = Long.parseLong(fileDataProcessor.getField("adminRole"));
-        commandManager = new CommandManager(fileDataProcessor.getField("StableDiffusionAPIURL"));
+        commandManager = new CommandManager(fileDataProcessor.getField("StableDiffusionAPIURL"), adminRoleId);
         jdaBuilder = JDABuilder.createDefault(fileDataProcessor.getField("discordToken"));
         jdaBuilder.addEventListeners(commandManager);
         jdaBuilder.addEventListeners(this);

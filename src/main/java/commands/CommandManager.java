@@ -11,17 +11,18 @@ import stablediff.StableDiffusionAPI;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 public class CommandManager extends ListenerAdapter {
-    private StableDiffusionAPI stablediff;
+    private StableDiffusionAPI stableDiff;
     private MessageEmbedBuilder msgEmbedBuilder;
-    private int stepCount;
+    private final String ACKNOWLEDGED_REACTION = "\u2705";
+    private long adminRole;
 
-    public CommandManager(String stableDiffusionAPIURL) {
+    public CommandManager(String stableDiffusionAPIURL, long adminRole) {
         super();
-        stablediff = new StableDiffusionAPI(stableDiffusionAPIURL).setStepCount(20);
+        stableDiff = new StableDiffusionAPI(stableDiffusionAPIURL).setStepCount(20);
         msgEmbedBuilder = new MessageEmbedBuilder();
+        this.adminRole = adminRole;
     }
 
     public interface Callback<T> {
@@ -51,18 +52,34 @@ public class CommandManager extends ListenerAdapter {
         e.getChannel().sendMessage(message).queue();
     }
 
+    private void logCommand(String message){
+        String timestamp = java.time.LocalDateTime.now().toString();
+        System.out.println("[" + timestamp + "] " + message);
+    }
+
     @Override
     public void onSlashCommand(SlashCommandEvent event) {
+        logCommand("Received slash command: " + event.getName() + " from " + event.getUser().getAsTag());
         switch (event.getName()) {
+            case "load-checkpoint":
+                String modelName = event.getOption("name").getAsString();
+                 runFunction(() -> stableDiff.setCheckpoint(modelName));
+                 event.reply("Checkpoint " + modelName + " loaded").queue();
+                break;
+            case "set-steps":
+                int stepSize = Integer.parseInt(event.getOption("size").getAsString());
+                runFunction(() -> stableDiff.setStepCount(stepSize));
+                event.reply("Step size set to " + stepSize).queue();
+                break;
             case "generate":
                 event.deferReply().queue();
                 String prompt = event.getOption("prompt").getAsString();
-                runFunction(() -> stablediff.generateImage(prompt));
+                runFunction(() -> stableDiff.generateImage(prompt));
                 event.getHook().sendFile(new File("output.png")).queue();
                 break;
-            case "show-models":
+            case "show-checkpoints":
                 event.deferReply().queue();
-                event.getHook().sendMessageEmbeds(msgEmbedBuilder.getModelListEmbed(runFunction(() -> stablediff.getAvailableModels()))).queue();
+                event.getHook().sendMessageEmbeds(msgEmbedBuilder.getModelListEmbed(runFunction(() -> stableDiff.getAvailableModels()))).queue();
                 break;
         }
     }
@@ -73,20 +90,18 @@ public class CommandManager extends ListenerAdapter {
         Message message = e.getMessage();
         String msg = message.getContentDisplay();
         String cmd = msg.split(" ")[0];
-        if (!msg.startsWith("!")) return;
+        if ((!msg.startsWith("!")) || !e.getMember().isOwner()) return;
+        logCommand("Received reg command: " + cmd + " from " + e.getAuthor().getAsTag());
         switch (cmd.substring(1)){
-            case "setstep":
-                try {
-                    stepCount = Integer.parseInt(msg.split(" ")[1]);
-                    stablediff.setStepCount(stepCount);
-                    sendMessage(e, "Step count set to " + stepCount);
-                }
-                catch (Exception ex){
-                    sendMessage(e, "Invalid step count");
-                }
+            case "setheight":
+                int height = Integer.parseInt(msg.split(" ")[1]);
+                runFunction(() -> stableDiff.setHeight(height));
+                e.getMessage().addReaction(ACKNOWLEDGED_REACTION).queue();
                 break;
-            default:
-                sendMessage(e, "Unknown command");
+            case "setwidth":
+                int width = Integer.parseInt(msg.split(" ")[1]);
+                runFunction(() -> stableDiff.setWidth(width));
+                e.getMessage().addReaction(ACKNOWLEDGED_REACTION).queue();
                 break;
         }
     }
