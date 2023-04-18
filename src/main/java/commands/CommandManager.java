@@ -46,6 +46,7 @@ public class CommandManager extends ListenerAdapter {
         }
         catch (Exception e){
             System.out.println("[" + timestamp + "] An unhanded exception occurred");
+            e.printStackTrace();
             System.out.println(e.getMessage());
         }
         return null;
@@ -79,13 +80,14 @@ public class CommandManager extends ListenerAdapter {
                 runFunction(() -> gpt.setPersona(new Persona("personas/" + personaName + ".json")));
                 event.reply("Persona set to " + personaName).queue();
                 break;
-            case "instruct-gpt":
+            case "gpt-instruct":
                 event.deferReply().queue();
-                String instruction = event.getOption("instruction").getAsString();
-                String instructionResponse = runFunction(() -> gpt.query(instruction));
+                String instruction = event.getOption("prompt").getAsString();
+                gpt.setInstructPrompt(instruction);
+                String instructionResponse = runFunction(() -> gpt.query(gpt.INSTRUCT_RESPONSE));
                 event.getHook().sendMessage(instructionResponse).queue();
                 break;
-            case "gpt":
+            case "ask-persona":
                 event.deferReply().queue();
                 gpt.setPrompt(event.getOption("prompt").getAsString());
                 String gptResponse = runFunction(() -> gpt.query(gpt.CHAT_RESPONSE));
@@ -123,7 +125,6 @@ public class CommandManager extends ListenerAdapter {
         Message message = e.getMessage();
         String msg = message.getContentDisplay();
         String cmd = msg.split(" ")[0];
-        // Chatting query
         if (msg.startsWith("@") && e.getMessage().getMentionedMembers().contains(e.getGuild().getSelfMember())){
             e.getMessage().addReaction(ACKNOWLEDGED_REACTION).queue();
             gpt.setPrompt(msg.substring(5));

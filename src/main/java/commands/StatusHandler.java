@@ -31,7 +31,7 @@ public class StatusHandler {
                 .addOption(OptionType.STRING, "name", "The name of the checkpoint", true)
                 .queue();
         jda.upsertCommand(new CommandData(
-                "gpt", "Generates a response for the currently loaded persona (chat)"))
+                "ask-persona", "Manually generates a response for the currently loaded persona (chat)"))
                 .addOption(OptionType.STRING, "prompt", "The given prompt", true)
                 .queue();
         jda.upsertCommand(new CommandData(
@@ -45,6 +45,7 @@ public class StatusHandler {
         jda.upsertCommand(new CommandData(
                 "generate-random-waifu", "Generates you a random anime girl decided by the kami (and AI)"))
                 .queue();
+
     }
 
     public void purgeSlashCommands() {

@@ -23,6 +23,7 @@ public class OpenAIAPI {
     public String APPEARENCE_GEN_RESPONSE = "appearence_gen";
     public String INSTRUCT_RESPONSE = "instruct";
     private String COMPLETION_ENDPOINT = "/chat/completions";
+    private String INSTRUCT_ENDPOINT = "/completions";
 
     private OkHttpClient client;
     private String apiKey;
@@ -52,6 +53,7 @@ public class OpenAIAPI {
     }
 
     public String queryGPT(String endpoint, Map<String, Object> requestBodyMap) throws IOException {
+        System.out.println("[OpenAI] Querying OpenAI API");
         MediaType mediaType = MediaType.parse("application/json");
         RequestBody body = RequestBody.create(mediaType, new ObjectMapper().writeValueAsString(requestBodyMap));
         Request request = new Request.Builder()
@@ -62,8 +64,20 @@ public class OpenAIAPI {
                 .build();
         Response response = client.newCall(request).execute();
         JsonNode responseNode = new ObjectMapper().readTree(response.body().string());
-        JsonNode messageJson = responseNode.get("choices").get(0).get("message");
-        String content = messageJson.get("content").asText();
+        JsonNode messageJson;
+        String content = "";
+        switch (endpoint){
+            case "/chat/completions":
+                messageJson = responseNode.get("choices").get(0).get("message");
+                content = messageJson.get("content").asText();
+                break;
+            case "/completions":
+                messageJson = responseNode.get("choices").get(0).get("text");
+                content = messageJson.asText();
+                break;
+            default:
+                messageJson = null;
+        }
         JsonNode usage = responseNode.get("usage");
         System.out.println("[Info] OpenAI API Usage: " +
                 usage.get("prompt_tokens") + " prompt tokens, " +
@@ -77,22 +91,19 @@ public class OpenAIAPI {
         Map<String, Object> requestBodyMap = new HashMap<>();
         requestBodyMap.put("max_tokens", maxTokens);
         requestBodyMap.put("temperature", 0.5);
-        requestBodyMap.put("model", model);
-        if (persona == null){
-            System.out.println("[Error] No persona set");
-            return null;
-        }
         switch (responseType){
-            // TODO: add completion endpoint for appearence gen
             case "instruct":
+                requestBodyMap.put("model", instructModel);
                 requestBodyMap.put("prompt", instructPrompt);
-                return queryGPT(COMPLETION_ENDPOINT, requestBodyMap);
+                return queryGPT(INSTRUCT_ENDPOINT, requestBodyMap);
             case "chat":
-                model = "gpt-3.5-turbo";
+                if (!checkPersonaLoaded()) return null;
+                requestBodyMap.put("model", model);
                 requestBodyMap.put("messages", prompts);
                 return queryGPT(COMPLETION_ENDPOINT, requestBodyMap);
             case "appearence_gen":
-                model = "gpt-3.5-turbo";
+                if (!checkPersonaLoaded()) return null;
+                requestBodyMap.put("model", model);
                 requestBodyMap.put("messages", appearenceGenPrompts);
                 return persona.getAppearenceDescription() + " ," + queryGPT(COMPLETION_ENDPOINT, requestBodyMap);
             default:
@@ -143,6 +154,14 @@ public class OpenAIAPI {
     public OpenAIAPI loadAnimeRandomGenerationPrompt(){
         instructPrompt = animeRandomGenerationPrompt;
         return this;
+    }
+
+    private boolean checkPersonaLoaded(){
+        if (persona == null){
+            System.out.println("[Error] No persona set");
+            return false;
+        }
+        return true;
     }
 
     private void setOpenAISettings(){
