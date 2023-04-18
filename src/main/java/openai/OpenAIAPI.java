@@ -15,6 +15,9 @@ import java.util.concurrent.TimeUnit;
 public class OpenAIAPI {
     public String CHAT_RESPONSE = "chat";
     public String APPEARENCE_GEN_RESPONSE = "appearence_gen";
+
+    private String COMPLETION_ENDPOINT = "/chat/completions";
+
     private OkHttpClient client;
     private String apiKey;
     private String baseUrl;
@@ -23,7 +26,8 @@ public class OpenAIAPI {
     private Persona persona;
     private List<Map<String,String>> appearenceGenPrompts;
     private List<Map<String,String>> prompts;
-    private Map<String, String> appearenceGenSettings = Map.of("role", "system", "content", "Be creative. List the scenery, objects, and what you think the person is doing, wearing, and their expression in the prompt below. Use only single words separated by commas in a list. Make it up if you're not sure or if its unknown. All 3 fields must be filled");
+    private String instructPrompt = "Generate a comma seperated list physical attributes for an anime girl. Make it detailed taking account expression, body-language, physical appearence, and what they are doing. Be creative!";
+    private Map<String, String> appearenceGenSettings = Map.of("role", "system", "content", "Be creative. List the scenery, objects, and what you think the person is doing, wearing, and their expression in the prompt below. Use only single words separated by commas in a list. Make it up if you're not sure or if its unknown or unspecified. List in the format: scenery, objects, person all in 1 line. Come up with at least 10 terms");
     private Map<String,String> characterData = Map.of("role", "system", "content", "You are a helpful assistant");
     private Map<String, String> rules = Map.of("role", "system", "content", "You should not break character at any time and always respond as the character themselves.");
     public OpenAIAPI(String apiKey, String baseUrl) {
@@ -37,16 +41,11 @@ public class OpenAIAPI {
         this.model = "gpt-3.5-turbo";
     }
 
-    public String queryGPT(List<Map<String,String>> prompt) throws IOException {
-        Map<String, Object> requestBodyMap = new HashMap<>();
-        requestBodyMap.put("messages", prompt);
-        requestBodyMap.put("max_tokens", maxTokens);
-        requestBodyMap.put("temperature", 0.5);
-        requestBodyMap.put("model", model);
+    public String queryGPT(String endpoint, Map<String, Object> requestBodyMap) throws IOException {
         MediaType mediaType = MediaType.parse("application/json");
         RequestBody body = RequestBody.create(mediaType, new ObjectMapper().writeValueAsString(requestBodyMap));
         Request request = new Request.Builder()
-                .url(baseUrl + "/chat/completions")
+                .url(baseUrl + endpoint)
                 .post(body)
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Authorization", "Bearer " + apiKey)
@@ -63,15 +62,22 @@ public class OpenAIAPI {
     }
 
     public String query(String responseType) throws IOException {
+        Map<String, Object> requestBodyMap = new HashMap<>();
+        requestBodyMap.put("max_tokens", maxTokens);
+        requestBodyMap.put("temperature", 0.5);
+        requestBodyMap.put("model", model);
         if (persona == null){
             System.out.println("[Error] No persona set");
             return null;
         }
         switch (responseType){
+            // TODO: add completion endpoint for appearence gen
             case "chat":
-                return queryGPT(prompts);
+                requestBodyMap.put("messages", prompts);
+                return queryGPT(COMPLETION_ENDPOINT, requestBodyMap);
             case "appearence_gen":
-                return persona.getAppearenceDescription() + " ," + queryGPT(appearenceGenPrompts);
+                requestBodyMap.put("messages", appearenceGenPrompts);
+                return persona.getAppearenceDescription() + " ," + queryGPT(COMPLETION_ENDPOINT, requestBodyMap);
             default:
                 return null;
         }

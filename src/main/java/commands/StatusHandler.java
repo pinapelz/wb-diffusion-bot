@@ -30,6 +30,10 @@ public class StatusHandler {
                 "load-checkpoint", "Load a checkpoint"))
                 .addOption(OptionType.STRING, "name", "The name of the checkpoint", true)
                 .queue();
+        jda.upsertCommand(new CommandData(
+                "gpt", "Generates a response for the currently loaded persona"))
+                .addOption(OptionType.STRING, "prompt", "The given prompt", true)
+                .queue();
     }
 
     public void purgeSlashCommands() {

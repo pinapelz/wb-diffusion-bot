@@ -66,6 +66,11 @@ public class CommandManager extends ListenerAdapter {
     public void onSlashCommand(SlashCommandEvent event) {
         logCommand("Received slash command: " + event.getName() + " from " + event.getUser().getAsTag());
         switch (event.getName()) {
+            case "gpt":
+                event.deferReply().queue();
+                gpt.setPrompt(event.getOption("prompt").getAsString());
+                event.getHook().sendMessage(runFunction(() -> gpt.query(gpt.CHAT_RESPONSE))).queue();
+                break;
             case "load-checkpoint":
                 String modelName = event.getOption("name").getAsString();
                  runFunction(() -> stableDiff.setCheckpoint(modelName));
@@ -78,8 +83,7 @@ public class CommandManager extends ListenerAdapter {
                 break;
             case "generate":
                 event.deferReply().queue();
-                String prompt = event.getOption("prompt").getAsString();
-                runFunction(() -> stableDiff.generateImage(prompt));
+                runFunction(() -> stableDiff.generateImage(event.getOption("prompt").getAsString()));
                 event.getHook().sendFile(new File("output.png")).queue();
                 break;
             case "show-checkpoints":
@@ -117,10 +121,6 @@ public class CommandManager extends ListenerAdapter {
             case "chara":
                 String characterName = msg.split(" ")[1];
                 runFunction(() -> gpt.setPersona(new Persona("personas/" + characterName + ".json")));
-                break;
-            case "gpt":
-                gpt.setPrompt(msg.substring(5));
-                sendMessage(e, runFunction(() -> gpt.query(gpt.CHAT_RESPONSE)));
                 break;
             case "setheight":
                 int height = Integer.parseInt(msg.split(" ")[1]);
