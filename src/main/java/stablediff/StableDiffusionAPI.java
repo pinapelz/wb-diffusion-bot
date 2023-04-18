@@ -1,10 +1,8 @@
 package stablediff;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import okhttp3.*;
 
 
@@ -41,6 +39,7 @@ public class StableDiffusionAPI {
     }
 
     public String generateImage(String prompt) throws IOException {
+        System.out.println("[Stable Diffusion]" + " Generating image with prompt: " + prompt);
         Map<String, Object> payload = Map.of(
                 "prompt", prompt,
                 "negative_prompt", negativePrompt,

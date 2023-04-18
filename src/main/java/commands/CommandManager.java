@@ -19,6 +19,7 @@ public class CommandManager extends ListenerAdapter {
     private OpenAIAPI gpt;
     private MessageEmbedBuilder msgEmbedBuilder;
     private final String ACKNOWLEDGED_REACTION = "\u2705";
+    private final String DENIED_REACTION = "\u274E";
     private long adminRole;
 
     public CommandManager(String stableDiffusionAPIURL, String openaiAPIURL, String openaiAPIKEY, long adminRole) {
@@ -96,8 +97,18 @@ public class CommandManager extends ListenerAdapter {
         String cmd = msg.split(" ")[0];
         // Chatting query
         if (msg.startsWith("@") && e.getMessage().getMentionedMembers().contains(e.getGuild().getSelfMember())){
+            e.getMessage().addReaction(ACKNOWLEDGED_REACTION).queue();
             gpt.setPrompt(msg.substring(5));
-            sendMessage(e, runFunction(() -> gpt.queryGPT()));
+            String gptResponse = runFunction(() -> gpt.query(gpt.CHAT_RESPONSE));
+            if (gptResponse == null) {
+                e.getMessage().addReaction(DENIED_REACTION).queue();
+                return;
+            }
+            gpt.setAppearenceGenPrompts(gptResponse);
+            String appearenceGenResponse = runFunction(() -> gpt.query(gpt.APPEARENCE_GEN_RESPONSE));
+            runFunction(() -> stableDiff.generateImage(appearenceGenResponse));
+            sendMessage(e, gptResponse);
+            e.getChannel().sendFile(new File("output.png")).queue();
             return;
         }
         if ((!msg.startsWith("!")) || !e.getMember().isOwner()) return;
@@ -105,11 +116,11 @@ public class CommandManager extends ListenerAdapter {
         switch (cmd.substring(1)){
             case "chara":
                 String characterName = msg.split(" ")[1];
-                runFunction(() -> gpt.setPersona(new Persona("characters/" + characterName + ".json")));
+                runFunction(() -> gpt.setPersona(new Persona("personas/" + characterName + ".json")));
                 break;
             case "gpt":
                 gpt.setPrompt(msg.substring(5));
-                sendMessage(e, runFunction(() -> gpt.queryGPT()));
+                sendMessage(e, runFunction(() -> gpt.query(gpt.CHAT_RESPONSE)));
                 break;
             case "setheight":
                 int height = Integer.parseInt(msg.split(" ")[1]);
