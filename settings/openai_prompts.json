@@ -1,0 +1,6 @@
+{
+  "appearanceGenPrompt": "Be creative. List the scenery, objects, and what you think the person is doing, wearing, and their expression in the prompt below. Use only single words separated by commas in a list. Make it up if you're not sure or if its unknown or unspecified. List in the format: scenery, objects, person all in 1 line. Come up with at least 10 terms",
+  "randomWaifuPrompt": "Generate a comma seperated list physical attributes for an anime girl. Make it detailed taking account expression, body-language, physical appearence, and what they are doing. Be creative!",
+  "defaultChatRules": "Do not break character at any time",
+  "defaultCharacter": "You are a helpful assistant. Ready to make conversation and help"
+}

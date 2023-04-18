@@ -1,0 +1,8 @@
+# ATTENTION. RENAME THIS FILE TO config.json AND FILL IN THE VALUES, THEN DELETE THIS LINE
+{
+  "discordToken": "Discord Bot Token",
+  "adminRole": "Admin Role. They can control various bot settings",
+  "StableDiffusionAPIURL": "http://127.0.0.1:7861",
+  "OpenAIAPIURL": "https://api.openai.com/v1",
+  "OpenAIAPIKEY": "OPENAI APIKEY"
+}
