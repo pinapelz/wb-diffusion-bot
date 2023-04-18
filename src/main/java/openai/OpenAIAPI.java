@@ -2,9 +2,15 @@ package openai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import datatypes.Persona;
 import okhttp3.*;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -26,11 +32,13 @@ public class OpenAIAPI {
     private Persona persona;
     private List<Map<String,String>> appearenceGenPrompts;
     private List<Map<String,String>> prompts;
-    private String instructPrompt = "Generate a comma seperated list physical attributes for an anime girl. Make it detailed taking account expression, body-language, physical appearence, and what they are doing. Be creative!";
-    private Map<String, String> appearenceGenSettings = Map.of("role", "system", "content", "Be creative. List the scenery, objects, and what you think the person is doing, wearing, and their expression in the prompt below. Use only single words separated by commas in a list. Make it up if you're not sure or if its unknown or unspecified. List in the format: scenery, objects, person all in 1 line. Come up with at least 10 terms");
-    private Map<String,String> characterData = Map.of("role", "system", "content", "You are a helpful assistant");
-    private Map<String, String> rules = Map.of("role", "system", "content", "You should not break character at any time and always respond as the character themselves.");
+    private String instructPrompt;
+    private Map<String, String> appearenceGenSettings;
+    private Map<String,String> characterData;
+    private Map<String, String> rules;
+
     public OpenAIAPI(String apiKey, String baseUrl) {
+        setOpenAISettings();
         OkHttpClient.Builder clientBuilder =
                 new OkHttpClient.Builder().readTimeout(600, TimeUnit.SECONDS).writeTimeout(600, TimeUnit.SECONDS);
         client = clientBuilder.build();
@@ -111,6 +119,26 @@ public class OpenAIAPI {
         appearenceGenPrompts = List.of(appearenceGenSettings, Map.of("role", "user", "content", prompt));
         return this;
     }
+
+    private void setOpenAISettings(){
+        // Sets the prompts for the chat and appearance generation
+        File settingsFile = new File("settings/openai_prompts.json");
+        JsonObject settings = new JsonObject();
+        try {
+            settings = JsonParser.parseReader(new FileReader(settingsFile)).getAsJsonObject();
+            instructPrompt = settings.get("randomWaifuPrompt").getAsString();
+            appearenceGenSettings = Map.of("role", "system", "content", settings.get("appearanceGenPrompt").getAsString());
+            rules = Map.of("role", "system", "content", settings.get("defaultChatRules").getAsString());
+            characterData = Map.of("role", "system", "content", settings.get("defaultCharacter").getAsString());
+            System.out.println("[Info] OpenAI settings loaded");
+        } catch (FileNotFoundException e) {
+            System.out.println("[Error] Could not find settings file");
+        }
+        catch (JsonParseException e){
+            System.out.println("[Error] Could not OpenAI settings file. Check if it is valid JSON");
+        }
+    }
+
 
 
 }
