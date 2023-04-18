@@ -1,6 +1,7 @@
 package commands;
 
 import builder.MessageEmbedBuilder;
+import datatypes.Persona;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
@@ -102,6 +103,10 @@ public class CommandManager extends ListenerAdapter {
         if ((!msg.startsWith("!")) || !e.getMember().isOwner()) return;
         logCommand("Received reg command: " + cmd + " from " + e.getAuthor().getAsTag());
         switch (cmd.substring(1)){
+            case "chara":
+                String characterName = msg.split(" ")[1];
+                runFunction(() -> gpt.setPersona(new Persona("characters/" + characterName + ".json")));
+                break;
             case "gpt":
                 gpt.setPrompt(msg.substring(5));
                 sendMessage(e, runFunction(() -> gpt.queryGPT()));

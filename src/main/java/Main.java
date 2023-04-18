@@ -4,9 +4,11 @@ import fileutils.FileDataProcessor;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import okhttp3.OkHttpClient;
 
 import javax.security.auth.login.LoginException;
-
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 public class Main extends ListenerAdapter{
@@ -18,6 +20,7 @@ public class Main extends ListenerAdapter{
     private long adminRoleId;
 
     public void initializeBot(){
+        Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINE);
         String openAIAPIURL = fileDataProcessor.getField("OpenAIAPIURL");
         String openAIAPIKEY = fileDataProcessor.getField("OpenAIAPIKEY");
         String stableDiffusionAPIURL = fileDataProcessor.getField("StableDiffusionAPIURL");
