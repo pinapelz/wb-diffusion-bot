@@ -66,10 +66,34 @@ public class CommandManager extends ListenerAdapter {
     public void onSlashCommand(SlashCommandEvent event) {
         logCommand("Received slash command: " + event.getName() + " from " + event.getUser().getAsTag());
         switch (event.getName()) {
+            case "generate-random-waifu":
+                event.deferReply().queue();
+                gpt.loadAnimeRandomGenerationPrompt();
+                String waifuPrompt = runFunction(() -> gpt.query(gpt.INSTRUCT_RESPONSE));
+                runFunction(() -> stableDiff.generateImage(waifuPrompt));
+                event.getHook().sendFile(new File("output.png")).queue();
+                break;
+            case "persona":
+                if(!checkAdminRole(event)) return;
+                String personaName = event.getOption("name").getAsString();
+                runFunction(() -> gpt.setPersona(new Persona("personas/" + personaName + ".json")));
+                event.reply("Persona set to " + personaName).queue();
+                break;
+            case "instruct-gpt":
+                event.deferReply().queue();
+                String instruction = event.getOption("instruction").getAsString();
+                String instructionResponse = runFunction(() -> gpt.query(instruction));
+                event.getHook().sendMessage(instructionResponse).queue();
+                break;
             case "gpt":
                 event.deferReply().queue();
                 gpt.setPrompt(event.getOption("prompt").getAsString());
-                event.getHook().sendMessage(runFunction(() -> gpt.query(gpt.CHAT_RESPONSE))).queue();
+                String gptResponse = runFunction(() -> gpt.query(gpt.CHAT_RESPONSE));
+                if(gptResponse == null) {
+                    event.getHook().sendMessage("An error has occurred. Check that a persona has been loaded").queue();
+                    return;
+                }
+                event.getHook().sendMessage(gptResponse).queue();
                 break;
             case "load-checkpoint":
                 String modelName = event.getOption("name").getAsString();
@@ -109,8 +133,8 @@ public class CommandManager extends ListenerAdapter {
                 return;
             }
             gpt.setAppearenceGenPrompts(gptResponse);
-            String appearenceGenResponse = runFunction(() -> gpt.query(gpt.APPEARENCE_GEN_RESPONSE));
-            runFunction(() -> stableDiff.generateImage(appearenceGenResponse));
+            String appearanceGenResponse = runFunction(() -> gpt.query(gpt.APPEARENCE_GEN_RESPONSE));
+            runFunction(() -> stableDiff.generateImage(appearanceGenResponse));
             sendMessage(e, gptResponse);
             e.getChannel().sendFile(new File("output.png")).queue();
             return;
@@ -118,10 +142,6 @@ public class CommandManager extends ListenerAdapter {
         if ((!msg.startsWith("!")) || !e.getMember().isOwner()) return;
         logCommand("Received reg command: " + cmd + " from " + e.getAuthor().getAsTag());
         switch (cmd.substring(1)){
-            case "chara":
-                String characterName = msg.split(" ")[1];
-                runFunction(() -> gpt.setPersona(new Persona("personas/" + characterName + ".json")));
-                break;
             case "setheight":
                 int height = Integer.parseInt(msg.split(" ")[1]);
                 runFunction(() -> stableDiff.setHeight(height));
@@ -133,6 +153,14 @@ public class CommandManager extends ListenerAdapter {
                 e.getMessage().addReaction(ACKNOWLEDGED_REACTION).queue();
                 break;
         }
+    }
+
+    private boolean checkAdminRole(SlashCommandEvent event){
+        if (!event.getMember().getRoles().contains(event.getGuild().getRoleById(adminRole))) {
+            event.reply("You do not have permission to use this command").queue();
+            return false;
+        }
+        return true;
     }
 
 

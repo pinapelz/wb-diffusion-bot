@@ -31,8 +31,19 @@ public class StatusHandler {
                 .addOption(OptionType.STRING, "name", "The name of the checkpoint", true)
                 .queue();
         jda.upsertCommand(new CommandData(
-                "gpt", "Generates a response for the currently loaded persona"))
+                "gpt", "Generates a response for the currently loaded persona (chat)"))
                 .addOption(OptionType.STRING, "prompt", "The given prompt", true)
+                .queue();
+        jda.upsertCommand(new CommandData(
+                "gpt-instruct", "Generates a response for the currently loaded instruct command (instruct)"))
+                .addOption(OptionType.STRING, "prompt", "Prompt for instruct model", true)
+                .queue();
+        jda.upsertCommand(new CommandData(
+                "persona", "Loads a new persona for chatting"))
+                .addOption(OptionType.STRING, "name", "The name of the Persona in the personas folder", true)
+                .queue();
+        jda.upsertCommand(new CommandData(
+                "generate-random-waifu", "Generates you a random anime girl decided by the kami (and AI)"))
                 .queue();
     }
 

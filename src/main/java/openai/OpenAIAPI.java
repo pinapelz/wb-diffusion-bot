@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class OpenAIAPI {
     public String CHAT_RESPONSE = "chat";
     public String APPEARENCE_GEN_RESPONSE = "appearence_gen";
-
+    public String INSTRUCT_RESPONSE = "instruct";
     private String COMPLETION_ENDPOINT = "/chat/completions";
 
     private OkHttpClient client;
@@ -36,6 +36,8 @@ public class OpenAIAPI {
     private Map<String, String> appearenceGenSettings;
     private Map<String,String> characterData;
     private Map<String, String> rules;
+    private String animeRandomGenerationPrompt;
+    private String instructModel = "text-davinci-003";
 
     public OpenAIAPI(String apiKey, String baseUrl) {
         setOpenAISettings();
@@ -63,8 +65,10 @@ public class OpenAIAPI {
         JsonNode messageJson = responseNode.get("choices").get(0).get("message");
         String content = messageJson.get("content").asText();
         JsonNode usage = responseNode.get("usage");
-        System.out.println("[Info] OpenAI API Usage: " + usage.get("prompt_tokens") + " prompt tokens, " + usage.get("completion_tokens") + " completion tokens " +
-        "Total: " + usage.get("total_tokens") + " tokens");
+        System.out.println("[Info] OpenAI API Usage: " +
+                usage.get("prompt_tokens") + " prompt tokens, " +
+                usage.get("completion_tokens") + " completion tokens " +
+                "Total: " + usage.get("total_tokens") + " tokens");
         response.close();
         return content;
     }
@@ -80,10 +84,15 @@ public class OpenAIAPI {
         }
         switch (responseType){
             // TODO: add completion endpoint for appearence gen
+            case "instruct":
+                requestBodyMap.put("prompt", instructPrompt);
+                return queryGPT(COMPLETION_ENDPOINT, requestBodyMap);
             case "chat":
+                model = "gpt-3.5-turbo";
                 requestBodyMap.put("messages", prompts);
                 return queryGPT(COMPLETION_ENDPOINT, requestBodyMap);
             case "appearence_gen":
+                model = "gpt-3.5-turbo";
                 requestBodyMap.put("messages", appearenceGenPrompts);
                 return persona.getAppearenceDescription() + " ," + queryGPT(COMPLETION_ENDPOINT, requestBodyMap);
             default:
@@ -120,13 +129,29 @@ public class OpenAIAPI {
         return this;
     }
 
+    public OpenAIAPI setInstructModel(String model){
+        this.instructModel = model;
+        return this;
+    }
+
+    public OpenAIAPI setInstructPrompt(String prompt){
+        System.out.println("[Info] Instruction prompt set to " + prompt);
+        instructPrompt = prompt;
+        return this;
+    }
+
+    public OpenAIAPI loadAnimeRandomGenerationPrompt(){
+        instructPrompt = animeRandomGenerationPrompt;
+        return this;
+    }
+
     private void setOpenAISettings(){
         // Sets the prompts for the chat and appearance generation
         File settingsFile = new File("settings/openai_prompts.json");
         JsonObject settings = new JsonObject();
         try {
             settings = JsonParser.parseReader(new FileReader(settingsFile)).getAsJsonObject();
-            instructPrompt = settings.get("randomWaifuPrompt").getAsString();
+            animeRandomGenerationPrompt = settings.get("randomWaifuPrompt").getAsString();
             appearenceGenSettings = Map.of("role", "system", "content", settings.get("appearanceGenPrompt").getAsString());
             rules = Map.of("role", "system", "content", settings.get("defaultChatRules").getAsString());
             characterData = Map.of("role", "system", "content", settings.get("defaultCharacter").getAsString());
