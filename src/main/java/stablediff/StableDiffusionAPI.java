@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class StableDiffusionAPI {
     private String baseUrl;
     private String negativePrompt;
+    private String positivePrompt;
     private OkHttpClient client;
 
     private int stepCount;
@@ -30,18 +31,17 @@ public class StableDiffusionAPI {
                 new OkHttpClient.Builder().readTimeout(600, TimeUnit.SECONDS).writeTimeout(600, TimeUnit.SECONDS);
         this.client = clientBuilder.build();
         negativePrompt = setDefaultNegatives();
-
+        positivePrompt = setDefaultPositives();
         this.baseUrl = baseUrl;
         this.stepCount = 20;
         this.width = 512;
         this.height = 512;
-
     }
 
     public String generateImage(String prompt) throws IOException {
         System.out.println("[Stable Diffusion]" + " Generating image with prompt: " + prompt);
         Map<String, Object> payload = Map.of(
-                "prompt", prompt,
+                "prompt", positivePrompt + ", " + prompt,
                 "negative_prompt", negativePrompt,
                 "steps", stepCount,
                 "width", width,
@@ -63,7 +63,16 @@ public class StableDiffusionAPI {
     }
 
     private static String setDefaultNegatives() {
-        File file = new File("negatives.txt");
+        File file = new File("settings/negatives.txt");
+        try (Scanner scanner = new Scanner(file).useDelimiter("\\Z")) {
+            return scanner.next();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String setDefaultPositives() {
+        File file = new File("settings/positives.txt");
         try (Scanner scanner = new Scanner(file).useDelimiter("\\Z")) {
             return scanner.next();
         } catch (FileNotFoundException e) {
