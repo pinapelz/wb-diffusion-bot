@@ -56,6 +56,7 @@ public class OpenAIAPI {
         System.out.println("[OpenAI] Querying OpenAI API");
         MediaType mediaType = MediaType.parse("application/json");
         RequestBody body = RequestBody.create(mediaType, new ObjectMapper().writeValueAsString(requestBodyMap));
+        System.out.println("[OpenAI] Request Body: " + new ObjectMapper().writeValueAsString(requestBodyMap));
         Request request = new Request.Builder()
                 .url(baseUrl + endpoint)
                 .post(body)
