@@ -31,12 +31,12 @@ public class OpenAIAPI {
     private String model;
     private int maxTokens;
     private Persona persona;
-    private List<Map<String,String>> appearenceGenPrompts;
     private List<Map<String,String>> prompts;
     private String instructPrompt;
-    private Map<String, String> appearenceGenSettings;
+    private String appearenceGenSettings;
     private Map<String,String> characterData;
     private Map<String, String> rules;
+    private String appearenceGenPrompt;
     private String animeRandomGenerationPrompt;
     private String instructModel = "text-davinci-003";
 
@@ -103,9 +103,9 @@ public class OpenAIAPI {
                 return queryGPT(COMPLETION_ENDPOINT, requestBodyMap);
             case "appearence_gen":
                 if (!checkPersonaLoaded()) return null;
-                requestBodyMap.put("model", model);
-                requestBodyMap.put("messages", appearenceGenPrompts);
-                return persona.getAppearenceDescription() + " ," + queryGPT(COMPLETION_ENDPOINT, requestBodyMap);
+                requestBodyMap.put("model", instructModel);
+                requestBodyMap.put("prompt", appearenceGenSettings + "\n" + appearenceGenPrompt + "\n");
+                return persona.getAppearenceDescription() + " ," + queryGPT(INSTRUCT_ENDPOINT, requestBodyMap);
             default:
                 return null;
         }
@@ -136,7 +136,7 @@ public class OpenAIAPI {
     }
 
     public OpenAIAPI setAppearenceGenPrompts(String prompt){
-        appearenceGenPrompts = List.of(appearenceGenSettings, Map.of("role", "user", "content", prompt));
+        appearenceGenPrompt = prompt;
         return this;
     }
 
@@ -164,6 +164,10 @@ public class OpenAIAPI {
         return true;
     }
 
+    public Persona getPersona() {
+        return persona;
+    }
+
     private void setOpenAISettings(){
         // Sets the prompts for the chat and appearance generation
         File settingsFile = new File("settings/openai_prompts.json");
@@ -171,7 +175,7 @@ public class OpenAIAPI {
         try {
             settings = JsonParser.parseReader(new FileReader(settingsFile)).getAsJsonObject();
             animeRandomGenerationPrompt = settings.get("randomWaifuPrompt").getAsString();
-            appearenceGenSettings = Map.of("role", "system", "content", settings.get("appearanceGenPrompt").getAsString());
+            appearenceGenSettings = settings.get("appearanceGenPrompt").getAsString();
             rules = Map.of("role", "system", "content", settings.get("defaultChatRules").getAsString());
             characterData = Map.of("role", "system", "content", settings.get("defaultCharacter").getAsString());
             System.out.println("[Info] OpenAI settings loaded");

@@ -72,7 +72,7 @@ public class StableDiffusionAPI {
     }
 
     private static String setDefaultPositives() {
-        File file = new File("settings/positives.txt");
+        File file = new File("settings/positive.txt");
         try (Scanner scanner = new Scanner(file).useDelimiter("\\Z")) {
             return scanner.next();
         } catch (FileNotFoundException e) {
@@ -116,4 +116,5 @@ public class StableDiffusionAPI {
         this.height = height;
         return this;
     }
+
 }

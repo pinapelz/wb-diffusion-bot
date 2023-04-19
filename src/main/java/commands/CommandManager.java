@@ -128,7 +128,9 @@ public class CommandManager extends ListenerAdapter {
         if (msg.startsWith("@") && e.getMessage().getMentionedMembers().contains(e.getGuild().getSelfMember())){
             e.getMessage().addReaction(ACKNOWLEDGED_REACTION).queue();
             gpt.setPrompt(msg.substring(5));
-            String gptResponse = runFunction(() -> gpt.query(gpt.CHAT_RESPONSE));
+            String characterPrompt = gpt.getPersona().getPersonalityDescription() + gpt.getPersona().getRules();
+            gpt.setInstructPrompt(characterPrompt+"\n"+msg.substring(6)+"\n");
+            String gptResponse = runFunction(() -> gpt.query(gpt.INSTRUCT_RESPONSE));
             if (gptResponse == null) {
                 e.getMessage().addReaction(DENIED_REACTION).queue();
                 return;
