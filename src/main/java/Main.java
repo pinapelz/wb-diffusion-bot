@@ -24,9 +24,11 @@ public class Main extends ListenerAdapter{
         String openAIAPIURL = fileDataProcessor.getField("OpenAIAPIURL");
         String openAIAPIKEY = fileDataProcessor.getField("OpenAIAPIKEY");
         String stableDiffusionAPIURL = fileDataProcessor.getField("StableDiffusionAPIURL");
+        String oobaboogaAPIURL = fileDataProcessor.getField("OobaboogaAPIURL");
         fileDataProcessor = new FileDataProcessor();
         adminRoleId = Long.parseLong(fileDataProcessor.getField("adminRole"));
         commandManager = new CommandManager(stableDiffusionAPIURL, openAIAPIURL, openAIAPIKEY ,adminRoleId);
+        // commandManager = new CommandManager(stableDiffusionAPIURL, oobaboogaAPIURL, adminRoleId);
         jdaBuilder = JDABuilder.createDefault(fileDataProcessor.getField("discordToken"));
         jdaBuilder.addEventListeners(commandManager);
         jdaBuilder.addEventListeners(this);
@@ -45,7 +47,7 @@ public class Main extends ListenerAdapter{
     public void onReady(net.dv8tion.jda.api.events.ReadyEvent event) {
         System.out.println("[Initialization] Logged in as " + event.getJDA().getSelfUser().getAsTag());
         statusHandler = new StatusHandler(jda);
-        //statusHandler.purgeSlashCommands();
+        // statusHandler.purgeSlashCommands();
         statusHandler.updateSlashCommands();
         System.out.println("[Initialization] Bot is ready!");
     }

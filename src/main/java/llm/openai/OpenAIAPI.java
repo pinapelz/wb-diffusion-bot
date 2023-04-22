@@ -1,4 +1,4 @@
-package openai;
+package llm.openai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import datatypes.Persona;
+import llm.LargeLanguageModelAPI;
 import okhttp3.*;
 
 import java.io.File;
@@ -18,12 +19,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
-public class OpenAIAPI {
-    public String CHAT_RESPONSE = "chat";
-    public String APPEARENCE_GEN_RESPONSE = "appearence_gen";
-    public String INSTRUCT_RESPONSE = "instruct";
-    private String COMPLETION_ENDPOINT = "/chat/completions";
-    private String INSTRUCT_ENDPOINT = "/completions";
+public class OpenAIAPI implements LargeLanguageModelAPI<OpenAIAPI> {
+    public final String COMPLETION_ENDPOINT = "/chat/completions";
+    public final String INSTRUCT_ENDPOINT = "/completions";
 
     private OkHttpClient client;
     private String apiKey;
@@ -33,10 +31,10 @@ public class OpenAIAPI {
     private Persona persona;
     private List<Map<String,String>> prompts;
     private String instructPrompt;
-    private String appearenceGenSettings;
+    private String appearanceGenSettings;
     private Map<String,String> characterData;
     private Map<String, String> rules;
-    private String appearenceGenPrompt;
+    private String appearanceGenPrompt;
     private String animeRandomGenerationPrompt;
     private String instructModel = "text-davinci-003";
 
@@ -88,6 +86,7 @@ public class OpenAIAPI {
         return content;
     }
 
+    @Override
     public String query(String responseType) throws IOException {
         Map<String, Object> requestBodyMap = new HashMap<>();
         requestBodyMap.put("max_tokens", maxTokens);
@@ -102,10 +101,10 @@ public class OpenAIAPI {
                 requestBodyMap.put("model", model);
                 requestBodyMap.put("messages", prompts);
                 return queryGPT(COMPLETION_ENDPOINT, requestBodyMap);
-            case "appearence_gen":
+            case "appearance_gen":
                 if (!checkPersonaLoaded()) return null;
                 requestBodyMap.put("model", instructModel);
-                requestBodyMap.put("prompt", appearenceGenSettings + "\n" + appearenceGenPrompt + "\n");
+                requestBodyMap.put("prompt", appearanceGenSettings + "\n" + appearanceGenPrompt + "\n");
                 return persona.getAppearenceDescription() + " ," + queryGPT(INSTRUCT_ENDPOINT, requestBodyMap);
             default:
                 return null;
@@ -113,6 +112,7 @@ public class OpenAIAPI {
 
     }
 
+    @Override
     public OpenAIAPI setPersona(Persona persona){
         this.persona = persona;
         this.rules = Map.of("role", "system", "content", persona.getRules());
@@ -129,6 +129,7 @@ public class OpenAIAPI {
         return this;
     }
 
+    @Override
     public OpenAIAPI setPrompt(String prompt) {
         prompts = List.of(characterData, rules, Map.of(
                 "role", "user",
@@ -136,8 +137,9 @@ public class OpenAIAPI {
         return this;
     }
 
+    @Override
     public OpenAIAPI setAppearenceGenPrompts(String prompt){
-        appearenceGenPrompt = prompt;
+        appearanceGenPrompt = prompt;
         return this;
     }
 
@@ -152,6 +154,7 @@ public class OpenAIAPI {
         return this;
     }
 
+    @Override
     public OpenAIAPI loadAnimeRandomGenerationPrompt(){
         instructPrompt = animeRandomGenerationPrompt;
         return this;
@@ -176,7 +179,7 @@ public class OpenAIAPI {
         try {
             settings = JsonParser.parseReader(new FileReader(settingsFile)).getAsJsonObject();
             animeRandomGenerationPrompt = settings.get("randomWaifuPrompt").getAsString();
-            appearenceGenSettings = settings.get("appearanceGenPrompt").getAsString();
+            appearanceGenSettings = settings.get("appearanceGenPrompt").getAsString();
             rules = Map.of("role", "system", "content", settings.get("defaultChatRules").getAsString());
             characterData = Map.of("role", "system", "content", settings.get("defaultCharacter").getAsString());
             System.out.println("[Info] OpenAI settings loaded");

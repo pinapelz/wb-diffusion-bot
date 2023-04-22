@@ -2,12 +2,14 @@ package commands;
 
 import builder.MessageEmbedBuilder;
 import datatypes.Persona;
+import llm.LargeLanguageModelAPI;
+import llm.ooba.OobaAPI;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import openai.OpenAIAPI;
+import llm.openai.OpenAIAPI;
 import stablediff.StableDiffusionAPI;
 
 
@@ -16,7 +18,7 @@ import java.io.IOException;
 
 public class CommandManager extends ListenerAdapter {
     private StableDiffusionAPI stableDiff;
-    private OpenAIAPI gpt;
+    private LargeLanguageModelAPI llmAI;
     private MessageEmbedBuilder msgEmbedBuilder;
     private final String ACKNOWLEDGED_REACTION = "\u2705";
     private final String DENIED_REACTION = "\u274E";
@@ -25,7 +27,15 @@ public class CommandManager extends ListenerAdapter {
     public CommandManager(String stableDiffusionAPIURL, String openaiAPIURL, String openaiAPIKEY, long adminRole) {
         super();
         stableDiff = new StableDiffusionAPI(stableDiffusionAPIURL).setStepCount(20);
-        gpt = new OpenAIAPI(openaiAPIKEY, openaiAPIURL);
+        llmAI = new OpenAIAPI(openaiAPIKEY, openaiAPIURL);
+        msgEmbedBuilder = new MessageEmbedBuilder();
+        this.adminRole = adminRole;
+    }
+
+    public CommandManager(String stableDiffusionAPIURL, String oobaAPIURL, long adminRole) {
+        super();
+        stableDiff = new StableDiffusionAPI(stableDiffusionAPIURL).setStepCount(20);
+        llmAI = new OobaAPI(oobaAPIURL);
         msgEmbedBuilder = new MessageEmbedBuilder();
         this.adminRole = adminRole;
     }
@@ -69,28 +79,28 @@ public class CommandManager extends ListenerAdapter {
         switch (event.getName()) {
             case "generate-random-waifu":
                 event.deferReply().queue();
-                gpt.loadAnimeRandomGenerationPrompt();
-                String waifuPrompt = runFunction(() -> gpt.query(gpt.INSTRUCT_RESPONSE));
+                llmAI.loadAnimeRandomGenerationPrompt();
+                String waifuPrompt = runFunction(() -> llmAI.query(llmAI.INSTRUCT_RESPONSE));
                 runFunction(() -> stableDiff.generateImage(waifuPrompt));
                 event.getHook().sendFile(new File("output.png")).queue();
                 break;
             case "persona":
                 if(!checkAdminRole(event)) return;
                 String personaName = event.getOption("name").getAsString();
-                runFunction(() -> gpt.setPersona(new Persona("personas/" + personaName + ".json")));
+                runFunction(() -> llmAI.setPersona(new Persona("personas/" + personaName + ".json")));
                 event.reply("Persona set to " + personaName).queue();
                 break;
             case "gpt-instruct":
                 event.deferReply().queue();
                 String instruction = event.getOption("prompt").getAsString();
-                gpt.setInstructPrompt(instruction);
-                String instructionResponse = runFunction(() -> gpt.query(gpt.INSTRUCT_RESPONSE));
+                llmAI.setInstructPrompt(instruction);
+                String instructionResponse = runFunction(() -> llmAI.query(llmAI.INSTRUCT_RESPONSE));
                 event.getHook().sendMessage(instructionResponse).queue();
                 break;
             case "ask-persona":
                 event.deferReply().queue();
-                gpt.setPrompt(event.getOption("prompt").getAsString());
-                String gptResponse = runFunction(() -> gpt.query(gpt.CHAT_RESPONSE));
+                llmAI.setPrompt(event.getOption("prompt").getAsString());
+                String gptResponse = runFunction(() -> llmAI.query(llmAI.CHAT_RESPONSE));
                 if(gptResponse == null) {
                     event.getHook().sendMessage("An error has occurred. Check that a persona has been loaded").queue();
                     return;
@@ -128,14 +138,14 @@ public class CommandManager extends ListenerAdapter {
         if (msg.startsWith("@") && e.getMessage().getMentionedMembers().contains(e.getGuild().getSelfMember())){
             e.getMessage().addReaction(ACKNOWLEDGED_REACTION).queue();
             msg = msg.replaceAll("@\\w+", "");
-            gpt.setPrompt(msg);
-            String gptResponse = runFunction(() -> gpt.query(gpt.CHAT_RESPONSE));
+            llmAI.setPrompt(msg);
+            String gptResponse = runFunction(() -> llmAI.query(llmAI.CHAT_RESPONSE));
             if (gptResponse == null) {
                 e.getMessage().addReaction(DENIED_REACTION).queue();
                 return;
             }
-            gpt.setAppearenceGenPrompts(gptResponse);
-            String appearanceGenResponse = runFunction(() -> gpt.query(gpt.APPEARENCE_GEN_RESPONSE));
+            llmAI.setAppearenceGenPrompts(gptResponse);
+            String appearanceGenResponse = runFunction(() -> llmAI.query(llmAI.APPEARANCE_GEN_RESPONSE));
             runFunction(() -> stableDiff.generateImage(appearanceGenResponse));
             sendMessage(e, gptResponse);
             e.getChannel().sendFile(new File("output.png")).queue();
@@ -144,6 +154,12 @@ public class CommandManager extends ListenerAdapter {
         if ((!msg.startsWith("!")) || !e.getMember().isOwner()) return;
         logCommand("Received reg command: " + cmd + " from " + e.getAuthor().getAsTag());
         switch (cmd.substring(1)){
+            case "dev":
+                e.getMessage().addReaction(ACKNOWLEDGED_REACTION).queue();
+                String msgs = msg.replaceAll("!dev","");
+                llmAI.setPrompt(msgs);
+                e.getChannel().sendMessage(runFunction(() -> llmAI.query(msgs))).queue();
+                break;
             case "setheight":
                 int height = Integer.parseInt(msg.split(" ")[1]);
                 runFunction(() -> stableDiff.setHeight(height));
