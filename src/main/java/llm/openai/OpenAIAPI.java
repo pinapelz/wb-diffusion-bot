@@ -131,9 +131,11 @@ public class OpenAIAPI implements LargeLanguageModelAPI<OpenAIAPI> {
 
     @Override
     public OpenAIAPI setPrompt(String prompt) {
-        prompts = List.of(characterData, rules, Map.of(
-                "role", "user",
-                "content", prompt));
+        prompts = List.of(characterData, rules,
+                Map.of("role", "user", "content", "Hello"),
+                Map.of("role", "assistant", "content", "Nice to meet you!"),
+                Map.of("role", "user", "content", prompt)
+        );
         return this;
     }
 
@@ -153,6 +155,7 @@ public class OpenAIAPI implements LargeLanguageModelAPI<OpenAIAPI> {
         instructPrompt = prompt;
         return this;
     }
+
 
     @Override
     public OpenAIAPI loadAnimeRandomGenerationPrompt(){

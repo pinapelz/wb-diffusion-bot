@@ -27,8 +27,7 @@ public class Main extends ListenerAdapter{
         String oobaboogaAPIURL = fileDataProcessor.getField("OobaboogaAPIURL");
         fileDataProcessor = new FileDataProcessor();
         adminRoleId = Long.parseLong(fileDataProcessor.getField("adminRole"));
-        commandManager = new CommandManager(stableDiffusionAPIURL, openAIAPIURL, openAIAPIKEY ,adminRoleId);
-        // commandManager = new CommandManager(stableDiffusionAPIURL, oobaboogaAPIURL, adminRoleId);
+        commandManager = new CommandManager(stableDiffusionAPIURL, openAIAPIURL, openAIAPIKEY , oobaboogaAPIURL, adminRoleId);
         jdaBuilder = JDABuilder.createDefault(fileDataProcessor.getField("discordToken"));
         jdaBuilder.addEventListeners(commandManager);
         jdaBuilder.addEventListeners(this);

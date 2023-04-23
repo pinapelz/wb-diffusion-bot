@@ -24,7 +24,7 @@ public class CommandManager extends ListenerAdapter {
     private final String DENIED_REACTION = "\u274E";
     private long adminRole;
 
-    public CommandManager(String stableDiffusionAPIURL, String openaiAPIURL, String openaiAPIKEY, long adminRole) {
+    public CommandManager(String stableDiffusionAPIURL, String openaiAPIURL, String openaiAPIKEY, String oobaAPIURL, long adminRole) {
         super();
         stableDiff = new StableDiffusionAPI(stableDiffusionAPIURL).setStepCount(20);
         llmAI = new OpenAIAPI(openaiAPIKEY, openaiAPIURL);
@@ -32,13 +32,6 @@ public class CommandManager extends ListenerAdapter {
         this.adminRole = adminRole;
     }
 
-    public CommandManager(String stableDiffusionAPIURL, String oobaAPIURL, long adminRole) {
-        super();
-        stableDiff = new StableDiffusionAPI(stableDiffusionAPIURL).setStepCount(20);
-        llmAI = new OobaAPI(oobaAPIURL);
-        msgEmbedBuilder = new MessageEmbedBuilder();
-        this.adminRole = adminRole;
-    }
 
     public interface Callback<T> {
         T run() throws IOException;
@@ -52,7 +45,7 @@ public class CommandManager extends ListenerAdapter {
         }
         catch (IOException e) {
             System.out.println("An IO exception occurred: " + e.getMessage());
-            System.out.println("It's probably because I can't open or fine a particular file!");
+            System.out.println("Check that the file exists and that you have permission to read it!");
         }
         catch (Exception e){
             System.out.println("[" + timestamp + "] An unhanded exception occurred");
@@ -139,15 +132,15 @@ public class CommandManager extends ListenerAdapter {
             e.getMessage().addReaction(ACKNOWLEDGED_REACTION).queue();
             msg = msg.replaceAll("@\\w+", "");
             llmAI.setPrompt(msg);
-            String gptResponse = runFunction(() -> llmAI.query(llmAI.CHAT_RESPONSE));
-            if (gptResponse == null) {
+            String llmResponse = runFunction(() -> llmAI.query(llmAI.CHAT_RESPONSE));
+            if (llmResponse == null) {
                 e.getMessage().addReaction(DENIED_REACTION).queue();
                 return;
             }
-            llmAI.setAppearenceGenPrompts(gptResponse);
+            llmAI.setAppearenceGenPrompts(llmResponse);
             String appearanceGenResponse = runFunction(() -> llmAI.query(llmAI.APPEARANCE_GEN_RESPONSE));
             runFunction(() -> stableDiff.generateImage(appearanceGenResponse));
-            sendMessage(e, gptResponse);
+            sendMessage(e, llmResponse);
             e.getChannel().sendFile(new File("output.png")).queue();
             return;
         }
