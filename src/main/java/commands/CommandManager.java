@@ -3,7 +3,6 @@ package commands;
 import builder.MessageEmbedBuilder;
 import datatypes.Persona;
 import llm.LargeLanguageModelAPI;
-import llm.ooba.OobaAPI;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
@@ -24,7 +23,7 @@ public class CommandManager extends ListenerAdapter {
     private final String DENIED_REACTION = "\u274E";
     private long adminRole;
 
-    public CommandManager(String stableDiffusionAPIURL, String openaiAPIURL, String openaiAPIKEY, String oobaAPIURL, long adminRole) {
+    public CommandManager(String stableDiffusionAPIURL, String openaiAPIURL, String openaiAPIKEY, long adminRole) {
         super();
         stableDiff = new StableDiffusionAPI(stableDiffusionAPIURL).setStepCount(20);
         llmAI = new OpenAIAPI(openaiAPIKEY, openaiAPIURL);

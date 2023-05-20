@@ -157,7 +157,6 @@ public class OpenAIAPI implements LargeLanguageModelAPI<OpenAIAPI> {
     }
 
 
-    @Override
     public OpenAIAPI loadAnimeRandomGenerationPrompt(){
         instructPrompt = animeRandomGenerationPrompt;
         return this;

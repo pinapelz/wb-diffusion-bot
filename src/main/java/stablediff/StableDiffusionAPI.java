@@ -59,6 +59,7 @@ public class StableDiffusionAPI {
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData));
             ImageIO.write(image, "png", new File("output.png"));
         }
+        System.out.println("this is a test message");
         return "Return the path to the image";
     }
 
